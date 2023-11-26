@@ -78,10 +78,51 @@ class KDtree():
     # Insert the Datum with the given code and coords into the tree.
     # The Datum with the given coords is guaranteed to not be in the tree.
     def insert(self, point: tuple[int], code: str):
-        thisisaplaceholder = True
+        if not self.root:
+            # root is empty
+            self.root = NodeLeaf([Datum(point, code)])
+            return
+        # navigate to leaf
+        parent = None
+        current = self.root
+        while not isinstance(current, NodeLeaf):
+            parent = current
+            splitindex = current.splitindex
+            splitvalue = current.splitvalue
+            if point[splitindex] >= splitvalue:
+                current = current.rightchild
+            else:
+                current = current.leftchild
+        current.data.append(Datum(point, code))
+        if len(current.data) > self.m:
+            # split
+            # find coord with
+            spreads = []
+            for i in range(self.k):
+                values = [datum.coords[i] for datum in current.data]
+                spread = max(values) - min(values)
+                spreads.append((i, spread))
+            spreads.sort(key=lambda x: (-x[1], x[0]))
+            current.data.sort(
+                key=lambda lst: [lst.coords[i] for i, _ in spreads])
+            mid = (self.m+1) // 2
+            left = current.data[:mid]
+            right = current.data[mid:]
+            split = NodeInternal(
+                spreads[0][1], current.data[mid-1][spreads[0][1]])
+            split.leftchild = NodeLeaf(left)
+            split.rightchild = NodeLeaf(right)
+            if not parent:
+                self.root = split
+                return
+            if parent.leftchild == current:
+                parent.leftchild = split
+                return
+            parent.rightchild = split
 
     # Delete the Datum with the given point from the tree.
     # The Datum with the given point is guaranteed to be in the tree.
+
     def delete(self, point: tuple[int]):
         thisisaplaceholder = True
 
