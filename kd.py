@@ -103,15 +103,19 @@ class KDtree():
                 spread = max(values) - min(values)
                 spreads.append((i, spread))
             spreads.sort(key=lambda x: (-x[1], x[0]))
+            splitindex = spreads[0][0]
             current.data.sort(
                 key=lambda lst: [lst.coords[i] for i, _ in spreads])
             mid = (self.m+1) // 2
             left = current.data[:mid]
             right = current.data[mid:]
-            split = NodeInternal(
-                spreads[0][1], current.data[mid-1][spreads[0][1]])
-            split.leftchild = NodeLeaf(left)
-            split.rightchild = NodeLeaf(right)
+            if len(current.data) % 2 == 1:
+                splitvalue = float(current.data[mid].coords[splitindex])
+            else:
+                splitvalue = float((
+                    current.data[mid-1].coords[splitindex] + current.data[mid].coords[splitindex]) / 2)
+            split = NodeInternal(splitindex, splitvalue,
+                                 NodeLeaf(left), NodeLeaf(right))
             if not parent:
                 self.root = split
                 return
