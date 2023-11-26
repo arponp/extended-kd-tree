@@ -128,9 +128,48 @@ class KDtree():
     # The Datum with the given point is guaranteed to be in the tree.
 
     def delete(self, point: tuple[int]):
-        thisisaplaceholder = True
+        gramp = None
+        parent = None
+        current = self.root
+        while not isinstance(current, NodeLeaf):
+            gramp = parent
+            parent = current
+            splitindex = current.splitindex
+            splitvalue = current.splitvalue
+            if point[splitindex] >= splitvalue:
+                current = current.rightchild
+            else:
+                current = current.leftchild
+        index = 0
+        for i, datum in enumerate(current.data):
+            if datum.coords == point:
+                index = i
+                break
+        current.data.pop(index)
+        if len(current.data) > 0:
+            return
+        if not parent:
+            self.root = None
+            return
+        if not gramp:
+            if current == parent.leftchild:
+                self.root = parent.rightchild
+            else:
+                self.root = parent.leftchild
+            return
+        if gramp.leftchild == parent:
+            if current == parent.leftchild:
+                gramp.leftchild = parent.rightchild
+            else:
+                gramp.leftchild = parent.leftchild
+        else:
+            if current == parent.leftchild:
+                gramp.rightchild = parent.rightchild
+            else:
+                gramp.rightchild = parent.leftchild
 
     # Find the k nearest neighbors to the point.
+
     def knn(self, k: int, point: tuple[int]) -> str:
         # Use the strategy discussed in class and in the notes.
         # The list should be a list of elements of type Datum.
