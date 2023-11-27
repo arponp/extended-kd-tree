@@ -175,7 +175,101 @@ class KDtree():
         # The list should be a list of elements of type Datum.
         # While recursing, count the number of leaf nodes visited while you construct the list.
         # The following lines should be replaced by code that does the job.
-        leaveschecked = 0
         knnlist = []
+        leaveschecked = 0
+
+        def getboundingbox(node, box):
+            if not node:
+                return
+            if isinstance(node, NodeLeaf):
+                for point in node.data:
+                    for i in range(self.k):
+                        box[i][0] = min(box[i][0], point.coords[i])
+                        box[i][1] = max(box[i][1], point.coords[i])
+            else:
+                getboundingbox(node.leftchild, box)
+                getboundingbox(node.rightchild, box)
+
+        def distancepoints(point1, point2):
+            if isinstance(point1, Datum):
+                point1 = point1.coords
+            if isinstance(point2, Datum):
+                point2 = point2.coords
+            val = 0
+            for i in range(self.k):
+                val += (point1[i] - point2[i]) ** 2
+            return val
+
+        def distancebox(point, box):
+            if isinstance(point, Datum):
+                point = point.coords
+            val = 0
+            for i in range(self.k):
+                if point[i] < box[i][0]:
+                    val += (box[i][0]-point[i]) ** 2
+                elif point[i] > box[i][1]:
+                    val += (point[i]-box[i][1]) ** 2
+            return val
+
+        def knnh(node):
+            if isinstance(node, NodeInternal):
+                leftbox = [[float('inf'), float('-inf')]
+                           for _ in range(self.k)]
+                rightbox = [[float('inf'), float('-inf')]
+                            for _ in range(self.k)]
+                getboundingbox(node.leftchild, leftbox)
+                getboundingbox(node.rightchild, rightbox)
+                leftdistance = rightdistance = -1
+                maxdistance = float('inf')
+                if knnlist:
+                    maxdistance = distancepoints(
+                        point, knnlist[len(knnlist)-1])
+                if node.leftchild:
+                    leftdistance = distancebox(point, leftbox)
+                if node.rightchild:
+                    rightdistance = distancebox(point, rightbox)
+                # choosing paths
+                leaves = 0
+                if rightdistance == -1 and (len(knnlist) < k or leftdistance < maxdistance):
+                    # left is only option and could improve list
+                    leaves += knnh(node.leftchild)
+                elif leftdistance == -1 and (len(knnlist) < k or rightdistance < maxdistance):
+                    # right is the only option and could improve list
+                    leaves += knnh(node.rightchild)
+                elif leftdistance <= rightdistance and (len(knnlist) < k or leftdistance < maxdistance):
+                    # left is preferred
+                    leaves += knnh(node.leftchild)
+                    # check if it makes sense to go right
+                    maxdistance = distancepoints(
+                        point, knnlist[len(knnlist)-1])
+                    if len(knnlist) < k or rightdistance < maxdistance:
+                        leaves += knnh(node.rightchild)
+                elif rightdistance < leftdistance and (len(knnlist) < k or rightdistance < maxdistance):
+                    # right is preferred
+                    leaves += knnh(node.rightchild)
+                    # check if it makes sense to go left
+                    maxdistance = distancepoints(
+                        point, knnlist[len(knnlist)-1])
+                    if len(knnlist) < k or leftdistance < maxdistance:
+                        leaves += knnh(node.leftchild)
+                return leaves
+            else:
+                # at a leaf
+                for datum in node.data:
+                    if len(knnlist) < k:
+                        knnlist.append(datum)
+                        knnlist.sort(key=lambda datum: (
+                            distancepoints(datum, point), datum.code))
+                    else:
+                        for i in range(k):
+                            comp = knnlist[i]
+                            if distancepoints(datum, point) < distancepoints(comp, point) or (distancepoints(datum, point) == distancepoints(comp, point) and datum.code < comp.code):
+                                knnlist.insert(i, datum)
+                                knnlist.pop()
+                                break
+                return 1
+
+        leaveschecked = knnh(self.root)
+
         # The following return line can probably be left alone unless you make changes in variable names.
         return (json.dumps({"leaveschecked": leaveschecked, "points": [datum.to_json() for datum in knnlist]}, indent=2))
