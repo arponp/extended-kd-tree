@@ -223,34 +223,34 @@ class KDtree():
                 maxdistance = float('inf')
                 if knnlist:
                     maxdistance = distancepoints(
-                        point, knnlist[len(knnlist)-1])
+                        point, knnlist[-1])
                 if node.leftchild:
                     leftdistance = distancebox(point, leftbox)
                 if node.rightchild:
                     rightdistance = distancebox(point, rightbox)
                 # choosing paths
                 leaves = 0
-                if rightdistance == -1 and (len(knnlist) < k or leftdistance < maxdistance):
+                if rightdistance == -1 and (len(knnlist) < k or leftdistance <= maxdistance):
                     # left is only option and could improve list
                     leaves += knnh(node.leftchild)
-                elif leftdistance == -1 and (len(knnlist) < k or rightdistance < maxdistance):
+                elif leftdistance == -1 and (len(knnlist) < k or rightdistance <= maxdistance):
                     # right is the only option and could improve list
                     leaves += knnh(node.rightchild)
-                elif leftdistance <= rightdistance and (len(knnlist) < k or leftdistance < maxdistance):
+                elif leftdistance <= rightdistance and (len(knnlist) < k or leftdistance <= maxdistance):
                     # left is preferred
                     leaves += knnh(node.leftchild)
                     # check if it makes sense to go right
                     maxdistance = distancepoints(
-                        point, knnlist[len(knnlist)-1])
-                    if len(knnlist) < k or rightdistance < maxdistance:
+                        point, knnlist[-1])
+                    if len(knnlist) < k or rightdistance <= maxdistance:
                         leaves += knnh(node.rightchild)
-                elif rightdistance < leftdistance and (len(knnlist) < k or rightdistance < maxdistance):
+                elif rightdistance < leftdistance and (len(knnlist) < k or rightdistance <= maxdistance):
                     # right is preferred
                     leaves += knnh(node.rightchild)
                     # check if it makes sense to go left
                     maxdistance = distancepoints(
-                        point, knnlist[len(knnlist)-1])
-                    if len(knnlist) < k or leftdistance < maxdistance:
+                        point, knnlist[-1])
+                    if len(knnlist) < k or leftdistance <= maxdistance:
                         leaves += knnh(node.leftchild)
                 return leaves
             else:
